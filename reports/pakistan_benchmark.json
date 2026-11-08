@@ -1,0 +1,14 @@
+{
+  "panel": "data/processed/pakistan_category_month.csv",
+  "rows_feature_ready": 281,
+  "series": 16,
+  "train_rows": 221,
+  "test_rows": 60,
+  "holdout_months": 4,
+  "cutoff": "2018-04-01",
+  "best_model": "Linear Regression",
+  "best_model_mae": 1236.46,
+  "best_baseline_mae": 680.03,
+  "model_beats_baseline": false,
+  "improvement_pct": -81.82
+}

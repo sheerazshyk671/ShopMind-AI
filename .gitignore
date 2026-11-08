@@ -4,8 +4,16 @@ __pycache__/
 *.pyc
 data/raw/*
 data/processed/*
+# Keep the small, derived panels: they are audit evidence for the real-data results
+# and are cheap to regenerate with `python -m src.pakistan_data`.
+!data/processed/pakistan_category_month.csv
+!data/processed/pakistan_sku_month.csv
 
 # Generated demo artefacts are reproducible from src/demo_data.py, but the
 # dataset is small enough to commit so the app runs without a training step.
 # Large regenerated exports stay out.
 data/demo/*.zip
+
+# The real dataset export is 106 MB and licensed to its original author.
+# It is not committed; see docs/PAKISTAN_DATASET.md for provenance and the SHA-256.
+data/raw/pakistan_ecommerce_raw.csv

@@ -16,8 +16,14 @@ from dataclasses import dataclass, field
 # ---------------------------------------------------------------------------
 # Category economics
 # ---------------------------------------------------------------------------
-# return_rate      : COD-driven return / RTO rate. Published Pakistan bands:
-#                    fashion 18-25%, beauty 12-18%, home 10-15%, electronics 8-12%.
+# return_rate      : COD-driven return / RTO rate. These were first set from published
+#                    Pakistani bands (fashion 18-25%, beauty 12-18%, home 10-15%,
+#                    electronics 8-12%) and are retained here as the *planning* assumption,
+#                    because a seller should budget on a normal month rather than on a
+#                    bad year. Measured on the real dataset (Pakistan's Largest E-Commerce
+#                    Dataset), the realised rate is much higher - 48% overall, 65% for
+#                    entertainment and 60% for mobiles - see docs/PAKISTAN_DATASET.md.
+#                    The app exposes the assumption instead of hiding it.
 # commission_rate  : marketplace commission. Published Daraz band: 8-15%.
 # shipping_cost    : courier charge per delivered order (Rs), COD parcel.
 # return_cost      : return-to-origin handling + packaging per returned unit (Rs).

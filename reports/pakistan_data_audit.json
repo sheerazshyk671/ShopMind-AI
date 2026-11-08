@@ -1,0 +1,74 @@
+{
+  "raw_rows": 1048575,
+  "truncated_at_excel_row_limit": true,
+  "excel_row_limit": 1048575,
+  "note": "The shared CSV export hits the 1,048,575-row Excel limit, so this is 584,524 non-empty order lines out of the ~1M the Kaggle page advertises. State this in the report; do not claim \"half a million\" as the whole file.",
+  "rows_after_dropping_blank": 584524,
+  "columns_dropped": [
+    "Unnamed: 21",
+    "Unnamed: 22",
+    "Unnamed: 23",
+    "Unnamed: 24",
+    "Unnamed: 25"
+  ],
+  "unparseable_dates": 0,
+  "status_counts": {
+    "complete": 233685,
+    "canceled": 201249,
+    "received": 77290,
+    "order_refunded": 59529,
+    "refund": 8050,
+    "cod": 2859,
+    "paid": 1159,
+    "closed": 494,
+    "payment_review": 57,
+    "pending": 48,
+    "processing": 33,
+    "holded": 31,
+    "fraud": 10,
+    "pending_paypal": 7,
+    "exchange": 4,
+    "\\N": 4
+  },
+  "rows_dropped_bad_quantity_or_value": 76,
+  "rows_kept_as_sales": 315450,
+  "rows_returns": 268803,
+  "rows_unresolved_excluded": 180,
+  "rows_excluded": 268998,
+  "revenue_kept_pct": 32.73,
+  "rows_with_zero_price": 842,
+  "date_range": [
+    "2016-07-01",
+    "2018-08-28"
+  ],
+  "months": 26,
+  "distinct_orders": 408753,
+  "distinct_skus": 84886,
+  "categories": 16,
+  "revenue_total_pkr": 4986373801.9,
+  "units_total": 757679.0,
+  "average_order_value_pkr": 12198.99,
+  "sku_level": {
+    "median_months_per_sku": 1.0,
+    "mean_months_per_sku": 1.69,
+    "skus_total": 84886,
+    "skus_dropped_single_month": 54945,
+    "skus_with_6+_months": 2159,
+    "unit_coverage_pct": 22.49,
+    "revenue_coverage_pct": 14.01,
+    "warning": "SKU-level forecasting on this dataset covers only a minority of volume. Report it as a secondary analysis, not the headline claim."
+  },
+  "seasonality": {
+    "ramadan_revenue_ratio": 1.636,
+    "november_revenue_ratio": 3.159,
+    "top_3_revenue_months": {
+      "2017-11-01": 799581896.0,
+      "2018-05-01": 459223677.0,
+      "2018-03-01": 420143248.0
+    },
+    "monthly_revenue_cv_pct": 85.0,
+    "reading": "A November ratio well above 1 is the Black Friday effect. Ramadan does not show up cleanly in this export, which is itself a finding: do not assume the festival effect is large in this marketplace without measuring it."
+  },
+  "source_file_sha256": "aa1344e8dde4f2ea9038eaafeaf908acbb54e6eee7783837d567be093bdd528e",
+  "licence": "Data files (c) Original Authors - Zeeshan-ul-hassan Usmani, published on Kaggle (zusmani/pakistans-largest-ecommerce-dataset). Educational use; cite the dataset."
+}
