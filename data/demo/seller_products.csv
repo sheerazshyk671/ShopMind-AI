@@ -1,0 +1,67 @@
+product_id,product_name,category,variant,current_price,current_unit_cost,current_stock,avg_monthly_units,return_rate,active
+P001,Yoga Mat - 4mm,Sports & Fitness,4mm,1652.4,958.39,36,26.0,0.13,1
+P002,Yoga Mat - 6mm,Sports & Fitness,6mm,2203.2,1287.42,3,12.8,0.13,1
+P003,Yoga Mat - 8mm,Sports & Fitness,8mm,2742.53,1695.46,5,11.7,0.13,1
+P004,"Power Bank - 10,000mAh",Electronics,"10,000mAh",3004.62,2316.59,12,10.7,0.1,1
+P005,"Power Bank - 20,000mAh",Electronics,"20,000mAh",4286.93,3218.3,3,14.8,0.1,1
+P006,Power Bank - Fast Charge,Electronics,Fast Charge,5254.94,3835.97,4,9.3,0.1,1
+P007,Stitched Cotton Kurti - Casual,Fashion,Casual,2334.83,1140.79,40,42.8,0.21,1
+P008,Stitched Cotton Kurti - Embroidered,Fashion,Embroidered,2663.68,1288.81,19,59.7,0.21,1
+P009,Stitched Cotton Kurti - Designer,Fashion,Designer,3661.19,1558.82,0,57.8,0.21,1
+P010,TWS Wireless Earbuds - Standard,Electronics,Standard,4387.5,3743.75,15,14.8,0.1,1
+P011,TWS Wireless Earbuds - ENC,Electronics,ENC,5632.09,4154.23,18,17.2,0.1,1
+P012,TWS Wireless Earbuds - Gaming,Electronics,Gaming,7115.54,5442.14,6,10.2,0.1,1
+P013,Herbal Hair Oil - 100ml,Beauty & Personal Care,100ml,669.19,282.48,0,271.8,0.15,1
+P014,Herbal Hair Oil - 200ml,Beauty & Personal Care,200ml,786.6,340.78,84,54.8,0.15,1
+P015,Herbal Hair Oil - Combo,Beauty & Personal Care,Combo,1009.66,434.64,0,24.0,0.15,1
+P016,Kids Water Bottle - 400ml,Baby & Kids,400ml,829.95,478.31,8,67.8,0.11,1
+P017,Kids Water Bottle - 600ml,Baby & Kids,600ml,1110.34,632.89,95,87.7,0.11,1
+P018,Kids Water Bottle - 800ml,Baby & Kids,800ml,1480.45,813.7,25,45.5,0.11,1
+P019,Mini Bluetooth Speaker - 5W,Electronics,5W,3444.63,2449.38,4,15.0,0.1,1
+P020,Mini Bluetooth Speaker - 10W,Electronics,10W,3997.78,2815.26,0,18.2,0.1,1
+P021,Mini Bluetooth Speaker - Party,Electronics,Party,4827.51,3670.5,0,12.0,0.1,1
+P022,Non-Stick Cookware Set - 7-Piece,Home & Kitchen,7-Piece,6673.23,3728.09,11,19.3,0.12,1
+P023,Non-Stick Cookware Set - 12-Piece,Home & Kitchen,12-Piece,8781.75,4938.37,0,17.7,0.12,1
+P024,Non-Stick Cookware Set - 16-Piece,Home & Kitchen,16-Piece,11215.52,6680.86,0,14.5,0.12,1
+P025,25W USB-C Fast Charger - 20W,Electronics,20W,1848.03,1266.48,12,18.2,0.1,1
+P026,25W USB-C Fast Charger - 25W,Electronics,25W,2250.32,1804.85,5,5.8,0.1,1
+P027,25W USB-C Fast Charger - 65W,Electronics,65W,2954.33,2231.57,3,10.5,0.1,1
+P028,Air Fryer - 5L,Home & Kitchen,5L,21679.6,12500.58,0,2.7,0.12,1
+P029,Air Fryer - 8L,Home & Kitchen,8L,26423.77,16505.65,8,6.3,0.12,1
+P030,Air Fryer - Dual Basket,Home & Kitchen,Dual Basket,35003.64,21550.4,1,1.2,0.12,1
+P031,3-Piece Chiffon Suit - Semi-Formal,Fashion,Semi-Formal,8637.77,4744.99,27,49.0,0.21,1
+P032,3-Piece Chiffon Suit - Formal,Fashion,Formal,11904.34,5747.45,14,28.2,0.21,1
+P033,3-Piece Chiffon Suit - Bridal,Fashion,Bridal,14809.17,7630.59,0,33.7,0.21,1
+P034,2-in-1 Juicer Blender - 2-in-1,Home & Kitchen,2-in-1,9914.52,6624.45,62,35.5,0.12,1
+P035,2-in-1 Juicer Blender - 3-in-1,Home & Kitchen,3-in-1,11507.12,6107.31,0,10.0,0.12,1
+P036,2-in-1 Juicer Blender - 4-in-1,Home & Kitchen,4-in-1,14703.55,7541.84,4,6.3,0.12,1
+P037,Dumbbell Set - 5kg,Sports & Fitness,5kg,4842.46,2483.03,5,6.8,0.13,1
+P038,Dumbbell Set - 10kg,Sports & Fitness,10kg,6081.76,3411.51,11,7.0,0.13,1
+P039,Dumbbell Set - 20kg,Sports & Fitness,20kg,7883.34,4722.65,2,5.0,0.13,1
+P040,Baby Fleece Blanket - Small,Baby & Kids,Small,1345.86,724.57,45,41.3,0.11,1
+P041,Baby Fleece Blanket - Medium,Baby & Kids,Medium,1469.23,682.73,90,62.5,0.11,1
+P042,Baby Fleece Blanket - Large,Baby & Kids,Large,2130.95,1026.51,13,73.3,0.11,1
+P043,Cotton Bedsheet Set - Single,Fashion,Single,2915.8,1516.91,71,38.0,0.21,1
+P044,Cotton Bedsheet Set - Double,Fashion,Double,3529.65,1811.17,0,62.5,0.21,1
+P045,Cotton Bedsheet Set - King,Fashion,King,4318.88,2288.15,0,34.7,0.21,1
+P046,Vitamin C Serum - 15ml,Beauty & Personal Care,15ml,1397.09,600.52,133,173.8,0.15,1
+P047,Vitamin C Serum - 30ml,Beauty & Personal Care,30ml,1643.64,791.41,35,64.2,0.15,1
+P048,Vitamin C Serum - Duo Pack,Beauty & Personal Care,Duo Pack,2277.61,1128.24,3,55.8,0.15,1
+P049,Electric Kettle - 1.5L,Home & Kitchen,1.5L,7368.6,4232.81,16,16.5,0.12,1
+P050,Electric Kettle - 1.8L,Home & Kitchen,1.8L,8478.93,4822.48,1,6.2,0.12,1
+P051,Electric Kettle - 2.0L,Home & Kitchen,2.0L,10082.75,5739.04,7,8.5,0.12,1
+P052,Skipping Rope - Basic,Sports & Fitness,Basic,504.9,243.1,7,21.0,0.13,1
+P053,Skipping Rope - Counter,Sports & Fitness,Counter,654.08,342.48,0,36.7,0.13,1
+P054,Skipping Rope - Speed,Sports & Fitness,Speed,940.95,526.05,24,19.8,0.13,1
+P055,Baby Diaper Pants (Pack) - Small,Baby & Kids,Small,1581.39,859.23,51,98.8,0.11,1
+P056,Baby Diaper Pants (Pack) - Medium,Baby & Kids,Medium,2052.44,1048.02,14,47.0,0.11,1
+P057,Baby Diaper Pants (Pack) - Large,Baby & Kids,Large,2310.4,1170.22,16,28.5,0.11,1
+P058,Sunblock SPF 50 - 50ml,Beauty & Personal Care,50ml,1115.32,559.32,1,166.3,0.15,1
+P059,Sunblock SPF 50 - 75ml,Beauty & Personal Care,75ml,1502.75,767.17,42,63.8,0.15,1
+P060,Sunblock SPF 50 - Family Pack,Beauty & Personal Care,Family Pack,1890.18,875.86,48,44.8,0.15,1
+P061,Lawn Suit - Printed,Fashion,Printed,4132.54,1955.54,33,63.2,0.21,1
+P062,Lawn Suit - Embroidered,Fashion,Embroidered,5524.66,2952.76,145,313.3,0.21,1
+P063,Lawn Suit - Luxury,Fashion,Luxury,8122.57,5042.42,51,136.7,0.21,1
+P064,Herbal Face Wash - 50ml,Beauty & Personal Care,50ml,680.94,337.96,122,581.7,0.15,1
+P065,Herbal Face Wash - 100ml,Beauty & Personal Care,100ml,845.3,383.41,392,151.7,0.15,1
+P066,Herbal Face Wash - Combo,Beauty & Personal Care,Combo,1127.07,524.13,1,84.0,0.15,1

@@ -1,0 +1,4 @@
+variant,validation_MAE
+Stage 1 only (no fine-tune),25.891878684900217
+Stage 2: pooled offset,25.876770151547927
+Stage 2: per-category offset (partial pooling),25.761235705654656

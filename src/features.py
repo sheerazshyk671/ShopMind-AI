@@ -4,9 +4,17 @@ import pandas as pd
 
 FEATURE_COLUMNS = ['month', 'month_sin', 'month_cos', 'months_since_start', 'lag_1', 'lag_3', 'lag_6', 'rolling_mean_3', 'rolling_mean_6', 'rolling_std_6', 'lag_1_ratio', 'trend', 'volatility']
 
+# Optional columns that are only present when the source data carries them (the
+# Pakistani demo data does; the raw Online Retail II export does not). They are
+# known *before* the month starts - a seller schedules promotions in advance - so
+# they are legitimate features, not leakage. ``make_features`` keeps any of these
+# that exist, and shifts them so the model only ever sees the planned value.
+OPTIONAL_FEATURES = ['planned_promo_days', 'planned_discount_pct']
+
 
 def make_features(panel):
     df = panel.copy()
+    optional = [c for c in OPTIONAL_FEATURES if c in df.columns]
     df['month'] = pd.to_datetime(df['month'])
     df = df.sort_values(['StockCode', 'month']).reset_index(drop=True)
     grouped = df.groupby('StockCode')['monthly_units_sold']
@@ -26,7 +34,8 @@ def make_features(panel):
     df['target_ratio'] = df['monthly_units_sold'] / df['rolling_mean_3'].replace(0, np.nan)
     df['month_date'] = df['month']
     df['month'] = month
-    return df.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURE_COLUMNS + ['target_ratio']).reset_index(drop=True)
+    keep = FEATURE_COLUMNS + optional
+    return df.replace([np.inf, -np.inf], np.nan).dropna(subset=keep + ['target_ratio']).reset_index(drop=True)
 
 
 def seller_features(products, forecast_month=None):

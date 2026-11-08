@@ -1,7 +1,13 @@
-"""ShopMind AI Streamlit inventory planning dashboard."""
-from pathlib import Path
-import sys
+"""ShopMind AI — demand forecasting and budget-aware buying plan for Pakistani sellers.
+
+Run:  streamlit run app/app.py
+"""
+from __future__ import annotations
+
 import io
+import sys
+from pathlib import Path
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -11,171 +17,330 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from src.forecasting import forecast_seller
-from src.optimization import optimize_budget
-from src.seller_history import history_columns
 
-st.set_page_config(page_title='ShopMind AI | Inventory planning', page_icon='◈', layout='wide', initial_sidebar_state='expanded')
-st.markdown('''<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;600;700;800&display=swap');
-html, body, [class*="css"], [data-testid="stApp"] {font-family:'DM Sans',sans-serif;color:#182b3d}
-[data-testid="stAppViewContainer"] {background:#f6f8fa}
-[data-testid="stSidebar"] {background:#102d38}
-[data-testid="stSidebar"] * {color:#e6f0ef}
-[data-testid="stSidebar"] [data-testid="stNumberInput"] input {color:#17313d}
-[data-testid="stSidebar"] [data-testid="stFileUploader"] {background:#1c3b46;border-radius:10px;padding:8px}
-.block-container {padding-top:2rem;padding-bottom:3rem;max-width:1550px}
-h1,h2,h3 {font-family:'Manrope',sans-serif!important;letter-spacing:-.035em}
-h1 {font-size:2.1rem!important;font-weight:800!important}
-h3 {font-size:1.05rem!important;font-weight:700!important}
-p {color:#637482}
-.eyebrow {font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:#23877e;margin-bottom:.5rem}
-.subhead {color:#6d7d89;font-size:.95rem;margin-top:-.5rem;margin-bottom:1.6rem}
-.brand {font-family:Manrope,sans-serif;font-size:1.3rem;font-weight:800;color:white;letter-spacing:-.04em}
-.brand-icon {display:inline-block;background:#54c3af;color:#10323a;padding:4px 9px;border-radius:8px;margin-right:8px}
-.side-label {color:#88a6aa!important;font-size:.68rem;letter-spacing:.13em;font-weight:700;margin-top:2rem;margin-bottom:.5rem}
-.sidebar-caption {font-size:.8rem;color:#a7bdbe!important;line-height:1.5}
-.metric-card {background:white;border:1px solid #e6ecee;border-radius:12px;padding:20px 18px;min-height:125px;box-shadow:0 2px 8px #14332c06}
-.metric-label {font-size:.76rem;color:#73838d;font-weight:600}
-.metric-value {font-family:Manrope,sans-serif;color:#18333d;font-weight:800;font-size:1.45rem;margin:9px 0 3px;letter-spacing:-.04em}
-.metric-note {font-size:.72rem;color:#88a09e}
-.section-kicker {font-size:.73rem;color:#82939b;margin-top:-.5rem}
-.insight {background:#eaf6f2;border:1px solid #cfe9df;border-radius:10px;padding:16px 18px;color:#28564c;font-size:.9rem;line-height:1.55}
-[data-testid="stButton"] button[kind="primary"] {background:#56c3ad;color:#103b36;border:none;font-weight:700;width:100%}
-[data-testid="stDownloadButton"] button {border-radius:8px}
+from src.planning import forecast_request  # noqa: E402
+
+DEMO = ROOT / 'data/demo'
+MODELS = ROOT / 'models'
+
+st.set_page_config(page_title='ShopMind AI — Buying plan', page_icon='◈', layout='wide')
+
+
+# ---------------------------------------------------------------------------
+# Styling
+# ---------------------------------------------------------------------------
+st.markdown('''
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+html, body, [class*="css"] {font-family:'Inter',sans-serif;color:#14232e}
+[data-testid="stAppViewContainer"] {background:#f7f9fa}
+[data-testid="stSidebar"] {background:#0f2b33}
+[data-testid="stSidebar"] * {color:#dfecef}
+[data-testid="stSidebar"] input, [data-testid="stSidebar"] select {color:#12262e}
+.block-container {padding-top:2.2rem;max-width:1500px}
+h1 {font-size:2rem!important;font-weight:800!important;letter-spacing:-.03em}
+h2,h3 {font-weight:700!important;letter-spacing:-.02em}
+.eyebrow {font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:#1c8578}
+.subhead {color:#617280;font-size:.95rem;margin-top:-.4rem}
+.card {background:#fff;border:1px solid #e5edee;border-radius:12px;padding:18px 16px;min-height:112px}
+.card .label {font-size:.74rem;color:#6d7f88;font-weight:600}
+.card .value {font-size:1.42rem;font-weight:800;color:#142d36;margin:.35rem 0 .15rem;letter-spacing:-.03em}
+.card .note {font-size:.71rem;color:#8ba0a4}
+.pill {display:inline-block;padding:2px 9px;border-radius:20px;font-size:.72rem;font-weight:700}
+.bad {background:#fdecec;color:#a5352f}
+.good {background:#e8f6ef;color:#1c7a55}
+.warn {background:#fff5e2;color:#8a5c12}
+.assume {background:#eef5f7;border:1px solid #d8e7ec;border-radius:10px;padding:14px 16px;font-size:.83rem;color:#3b5a63;line-height:1.6}
 </style>''', unsafe_allow_html=True)
 
-sample_path = ROOT / 'data/sample_seller_products.csv'
-model_path = ROOT / 'models/demand_model.pkl'
-with st.sidebar:
-    st.markdown('<div class="brand"><span class="brand-icon">◈</span>ShopMind <span style="color:#70d1bf">AI</span></div>', unsafe_allow_html=True)
-    st.markdown('<p class="sidebar-caption" style="margin-top:12px">Smarter inventory decisions,<br>made with confidence.</p>', unsafe_allow_html=True)
-    st.markdown('<div class="side-label">PLAN SETTINGS</div>', unsafe_allow_html=True)
-    budget = st.number_input('Monthly budget (Rs.)', min_value=0.0, value=500000.0, step=10000.0, format='%.2f')
-    st.markdown('<div class="side-label">YOUR PRODUCT DATA</div>', unsafe_allow_html=True)
-    upload = st.file_uploader('Upload seller file', type=['csv', 'xlsx'], help='Required: ProductID, ProductName, CurrentPrice, CurrentStock and at least six monthly sales columns Sales_01, Sales_02, ... (oldest first).')
-    st.download_button('↓ Download CSV template', sample_path.read_bytes(), 'sample_seller_products.csv', 'text/csv', use_container_width=True)
-    st.markdown('<p class="sidebar-caption">No file? Use the sample data to explore the dashboard.</p>', unsafe_allow_html=True)
-    generate = st.button('Generate purchase plan →', type='primary', use_container_width=True)
-    st.markdown('<div style="margin-top:3rem;border-top:1px solid #31505a;padding-top:16px" class="sidebar-caption">◉ &nbsp;Built for better decisions<br><span style="color:#779699">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Demand meets your budget.</span></div>', unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+@st.cache_resource
+def load_model(path: str, mtime: float):
+    return joblib.load(path)
 
 
-def validate_products(df):
+def resolve_model(choice: str, summary: dict):
+    """Return the model object for the selected option, plus a label for the UI."""
+    if choice.startswith('Stage 2') and (MODELS / 'seller_model.pkl').exists():
+        path = MODELS / 'seller_model.pkl'
+        return load_model(str(path), path.stat().st_mtime), 'stage 2 (seller-calibrated)'
+    path = MODELS / 'base_model.pkl'
+    if path.exists():
+        return load_model(str(path), path.stat().st_mtime), 'stage 1 (market model)'
+    path = MODELS / 'seller_model.pkl'
+    if path.exists():
+        return load_model(str(path), path.stat().st_mtime), 'stage 2 (seller-calibrated)'
+    return None, 'none'
+
+
+@st.cache_data
+def load_csv(path: str, mtime: float) -> pd.DataFrame:
+    return pd.read_csv(path)
+
+
+def read_upload(upload) -> pd.DataFrame:
+    if upload.name.lower().endswith(('.xlsx', '.xls')):
+        return pd.read_excel(upload)
+    return pd.read_csv(upload)
+
+
+def validate_request(df: pd.DataFrame) -> pd.DataFrame:
     required = ['ProductID', 'ProductName', 'CurrentPrice', 'CurrentStock']
-    missing = set(required) - set(df.columns)
+    missing = [c for c in required if c not in df.columns]
     if missing:
-        raise ValueError('Missing columns: ' + ', '.join(sorted(missing)))
+        raise ValueError('Missing required column(s): ' + ', '.join(missing))
     if df.empty:
-        raise ValueError('The product file is empty.')
-    sales_cols = history_columns(df)
-    if not sales_cols and 'RecentMonthlySales' not in df.columns:
-        raise ValueError('Provide at least six monthly sales columns (Sales_01 onward) or RecentMonthlySales.')
-    df = df[required + (sales_cols if sales_cols else ['RecentMonthlySales'])].copy()
-    for col in ['ProductID', 'ProductName']:
-        if df[col].isna().any() or df[col].astype(str).str.strip().eq('').any():
-            raise ValueError(f'{col} cannot be empty.')
-    if df['ProductID'].astype(str).duplicated().any():
-        raise ValueError('ProductID values must be unique.')
-    for col in ['CurrentPrice', 'CurrentStock'] + (sales_cols if sales_cols else ['RecentMonthlySales']):
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-        if not np.isfinite(df[col]).all() or (df[col] < 0).any():
-            raise ValueError(f'{col} must contain finite, non-negative numbers.')
+        raise ValueError('The product file has no rows.')
+    df = df.copy()
+    df['ProductID'] = df['ProductID'].astype(str).str.strip()
+    if df['ProductID'].duplicated().any():
+        dupes = ', '.join(df.loc[df['ProductID'].duplicated(), 'ProductID'].head(3))
+        raise ValueError(f'ProductID must be unique. Duplicated: {dupes}')
+    for column in ('CurrentPrice', 'CurrentStock'):
+        df[column] = pd.to_numeric(df[column], errors='coerce')
+        if df[column].isna().any():
+            raise ValueError(f'{column} must be numeric on every row.')
     if (df['CurrentPrice'] <= 0).any():
         raise ValueError('CurrentPrice must be greater than zero.')
+    if (df['CurrentStock'] < 0).any():
+        raise ValueError('CurrentStock cannot be negative.')
     return df
 
 
-def build_plan():
-    if upload:
-        df = pd.read_csv(upload) if upload.name.lower().endswith('.csv') else pd.read_excel(upload)
-    else:
-        df = pd.read_csv(sample_path)
-    df = validate_products(df)
-    trained = model_path.exists()
-    if trained:
-        df = forecast_seller(df, joblib.load(model_path))
-    else:
-        # Transparent baseline allows exploring the interface without the external dataset.
-        sales_cols = history_columns(df)
-        df['ForecastedDemand'] = df[sales_cols[-3:]].mean(axis=1) if sales_cols else df['RecentMonthlySales']
-        df['SafetyStock'] = 1.28 * df[sales_cols[-6:]].std(axis=1) if sales_cols else 0.0
-    calibration = df.attrs.get('calibration', 1.0)
-    calibration_samples = df.attrs.get('calibration_samples', 0)
-    return optimize_budget(df, budget), trained, float(budget), upload.name if upload else 'Sample product data', calibration, calibration_samples, bool(history_columns(df))
+def money(value: float) -> str:
+    return f'Rs {value:,.0f}'
 
-if generate or 'plan' not in st.session_state:
-    try:
-        st.session_state.plan = build_plan()
-    except Exception as exc:
-        st.error(f'Could not generate plan: {exc}')
-        st.stop()
-plan, trained, plan_budget, source, calibration, calibration_samples, has_history = st.session_state.plan
-investment = plan['Investment'].sum()
-remaining = max(0, plan_budget - investment)
-utilization = investment / plan_budget * 100 if plan_budget else 0
 
-st.markdown('<div class="eyebrow">INVENTORY INTELLIGENCE &nbsp; / &nbsp; OVERVIEW</div>', unsafe_allow_html=True)
-st.title('Your inventory, optimized.')
-st.markdown('<p class="subhead">A clearer picture of what to buy, and where your budget goes.</p>', unsafe_allow_html=True)
-if not trained:
-    st.warning('Baseline preview: no trained model found. Forecasts use the recent three-month average (or the single recent-sales value). Train a model to enable ML predictions.', icon='ℹ️')
+# ---------------------------------------------------------------------------
+# Sidebar — the audience's input
+# ---------------------------------------------------------------------------
+history_path = DEMO / 'seller_sales_history.csv'
+sample_request = DEMO / 'seller_purchase_request.csv'
+
+with st.sidebar:
+    st.markdown('<div style="font-size:1.25rem;font-weight:800;letter-spacing:-.03em">'
+                '<span style="background:#4fc3ad;color:#0f2b33;padding:3px 8px;border-radius:7px">◈</span>'
+                ' ShopMind AI</div>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#93aeb3;font-size:.82rem;margin-top:.6rem">'
+                'Buy the right stock, with the money you actually have.</p>',
+                unsafe_allow_html=True)
+
+    st.markdown('<div style="font-size:.68rem;letter-spacing:.14em;font-weight:700;'
+                'color:#7fa3a6;margin-top:1.4rem">THIS MONTH\'S BUDGET</div>', unsafe_allow_html=True)
+    budget = st.number_input('Budget (PKR)', min_value=0.0, value=500_000.0, step=50_000.0,
+                             format='%.0f', label_visibility='collapsed')
+
+    st.markdown('<div style="font-size:.68rem;letter-spacing:.14em;font-weight:700;'
+                'color:#7fa3a6;margin-top:1.2rem">PRODUCTS TO BUY</div>', unsafe_allow_html=True)
+    upload = st.file_uploader('Purchase request CSV', type=['csv', 'xlsx'],
+                              label_visibility='collapsed',
+                              help='Columns: ProductID, ProductName, CurrentPrice, CurrentStock, '
+                                   'optionally RetailPrice, Category, UnitsWanted.')
+    st.download_button('↓ Download a demo request', sample_request.read_bytes(),
+                       'seller_purchase_request.csv', 'text/csv', width="stretch")
+
+    st.markdown('<div style="font-size:.68rem;letter-spacing:.14em;font-weight:700;'
+                'color:#7fa3a6;margin-top:1.2rem">SALES HISTORY (FORECASTING)</div>', unsafe_allow_html=True)
+    with_history = st.toggle('Use my 12-month sales history', value=True,
+                             help='Without history, demand falls back to the quantities you asked for.')
+    history_upload = st.file_uploader('History CSV', type=['csv'], label_visibility='collapsed',
+                                      help='One row per product per month: product_id, month, '
+                                           'units_sold (optionally category, promo_days, discount_pct).')
+
+    st.markdown('<div style="font-size:.68rem;letter-spacing:.14em;font-weight:700;'
+                'color:#7fa3a6;margin-top:1.2rem">MODEL</div>', unsafe_allow_html=True)
+    model_choice = st.radio(
+        'Model', ['Stage 1 only (default)', 'Stage 2: calibrate to my history'],
+        label_visibility='collapsed',
+        help='Stage 2 was selected on the validation window, but it did not improve '
+             'accuracy on the untouched test window. Stage 1 is therefore the default.')
+
+
+# ---------------------------------------------------------------------------
+# Load everything
+# ---------------------------------------------------------------------------
+summary_path = ROOT / 'reports' / 'training_summary.json'
+try:
+    TRAINING_SUMMARY = __import__('json').loads(summary_path.read_text())
+except (OSError, ValueError):
+    TRAINING_SUMMARY = {}
+model, model_label = resolve_model(model_choice, TRAINING_SUMMARY)
+history = None
+history_label = 'none'
+if with_history:
+    if history_upload is not None:
+        history = read_upload(history_upload)
+        history_label = history_upload.name
+    elif history_path.exists():
+        history = load_csv(str(history_path), history_path.stat().st_mtime)
+        history_label = 'demo 24-month history'
+
+if upload is not None:
+    request = read_upload(upload)
+    source = upload.name
 else:
-    st.caption(f'ML demand-ratio model active · Next calendar month · Seller calibration: {calibration:.2f}× from {calibration_samples} historical examples')
-    st.info('The historical holdout showed weak predictive performance. Validate forecasts against your own sales before making purchasing decisions.')
-    st.caption('Sales history is ordered oldest to newest; the last month is assumed to be the current calendar month.')
-st.caption(f'PLAN SOURCE  ·  {source}     |     Change settings and select Generate purchase plan to refresh.')
-cols = st.columns(5)
-metrics = [('Total budget', f'Rs. {plan_budget:,.0f}', 'Available to allocate'), ('Recommended investment', f'Rs. {investment:,.0f}', 'Across your purchase plan'), ('Remaining budget', f'Rs. {remaining:,.0f}', 'Unallocated funds'), ('Budget utilization', f'{utilization:.1f}%', 'Of your monthly budget'), ('Total products', f'{len(plan):,}', 'In your product catalog')]
-for col, (label, value, note) in zip(cols, metrics):
-    col.markdown(f'<div class="metric-card"><div class="metric-label">{label}</div><div class="metric-value">{value}</div><div class="metric-note">{note}</div></div>', unsafe_allow_html=True)
-st.markdown('<br>', unsafe_allow_html=True)
-left, right = st.columns([1.65, 1], gap='large')
-config = dict(displayModeBar=False, responsive=True)
-with left:
-    st.subheader('Demand forecast')
-    st.markdown('<p class="section-kicker">Estimated units needed next month, by product</p>', unsafe_allow_html=True)
-    chart = plan.sort_values('ForecastedDemand', ascending=True).tail(10)
-    fig = px.bar(chart, x='ForecastedDemand', y='ProductName', orientation='h', color_discrete_sequence=['#3fae9b'])
-    fig.update_layout(height=310, margin=dict(l=0,r=20,t=10,b=0), plot_bgcolor='white', paper_bgcolor='rgba(0,0,0,0)', xaxis_title=None, yaxis_title=None, font=dict(color='#74858d'), xaxis=dict(showgrid=True,gridcolor='#edf2f1'), yaxis=dict(showgrid=False))
-    st.plotly_chart(fig, use_container_width=True, config=config)
-with right:
-    st.subheader('Budget allocation')
-    st.markdown('<p class="section-kicker">Where your recommended investment goes</p>', unsafe_allow_html=True)
-    allocated = plan[plan['Investment'] > 0]
-    if allocated.empty:
-        st.info('No purchases recommended for this budget.')
-    else:
-        fig = px.pie(allocated, names='ProductName', values='Investment', hole=.7, color_discrete_sequence=['#168d80','#47b7a3','#8ed2bd','#b8ded2','#2d6267','#d7e9d8','#6d9f9a','#c1d4cf'])
-        fig.update_traces(textinfo='none', hovertemplate='%{label}<br>Rs. %{value:,.0f}<extra></extra>')
-        fig.update_layout(height=310, margin=dict(l=0,r=0,t=10,b=0), paper_bgcolor='rgba(0,0,0,0)', legend=dict(orientation='v', font=dict(size=11)), showlegend=True)
-        st.plotly_chart(fig, use_container_width=True, config=config)
+    request = load_csv(str(sample_request), sample_request.stat().st_mtime)
+    source = 'demo request (36 products)'
 
-st.subheader('Purchase recommendations')
-st.markdown('<p class="section-kicker">Your prioritized, budget-aware purchase plan</p>', unsafe_allow_html=True)
-display = plan[['ProductName','ForecastedDemand','CurrentStock','CurrentPrice','RecommendedPurchase','Investment','Priority']].rename(columns={'ProductName':'Product name','ForecastedDemand':'Forecasted demand','CurrentStock':'Current stock','CurrentPrice':'Price (Rs.)','RecommendedPurchase':'Purchase units','Investment':'Investment (Rs.)'})
-styled = display.style.map(lambda value: {'High': 'color: #ad5c24; background-color: #fff2df', 'Medium': 'color: #98711c; background-color: #fff9dd', 'Low': 'color: #358774; background-color: #eaf6f2'}.get(value, ''), subset=['Priority'])
-st.dataframe(styled, use_container_width=True, hide_index=True, column_config={'Forecasted demand':st.column_config.NumberColumn(format='%.1f'), 'Price (Rs.)':st.column_config.NumberColumn(format='%.2f'), 'Investment (Rs.)':st.column_config.NumberColumn(format='%.2f')})
-st.download_button('↓ Export recommendations', plan.to_csv(index=False).encode('utf-8'), 'shopmind_purchase_plan.csv', 'text/csv')
+
+# ---------------------------------------------------------------------------
+# Header
+# ---------------------------------------------------------------------------
+st.markdown('<div class="eyebrow">Buying plan · Pakistani e-commerce</div>', unsafe_allow_html=True)
+st.title('What should I buy this month?')
+st.markdown(f'<p class="subhead">Forecast from your sales history, then spend your budget where '
+            f'the margin is. Source: <b>{source}</b> · history: <b>{history_label}</b> · '
+            f'model: <b>{model_label}</b></p>', unsafe_allow_html=True)
+
+if model is None:
+    st.error('No trained model found. Run `python scripts/train_pipeline.py --demo` first.')
+    st.stop()
+
+# ---------------------------------------------------------------------------
+# Run the plan
+# ---------------------------------------------------------------------------
+try:
+    request = validate_request(request)
+    result = forecast_request(request, model, budget=budget, history=history)
+except Exception as exc:  # noqa: BLE001 - surface the reason to the user
+    st.error(f'Could not build a plan: {exc}')
+    st.stop()
+
+plan, summary = result.plan, result.summary
+
+# ---------------------------------------------------------------------------
+# Headline metrics
+# ---------------------------------------------------------------------------
+columns = st.columns(5)
+cards = [
+    ('Budget', money(summary['budget']), 'what you said you have'),
+    ('Recommended spend', money(summary['investment']), f"{summary['utilisation_pct']:.0f}% of budget used"),
+    ('Expected profit', money(summary['expected_profit']),
+     f"ROI {summary['expected_roi_pct']:.1f}% after fees & returns"),
+    ('Products funded', f"{summary['funded_products']} / {summary['products']}",
+     f"{summary['partial_fill_products']} still short after buying"),
+    ('Loss-making items', f"{summary['unprofitable_products']}",
+     'negative margin at current prices'),
+]
+for column, (label, value, note) in zip(columns, cards):
+    column.markdown(f'<div class="card"><div class="label">{label}</div>'
+                    f'<div class="value">{value}</div><div class="note">{note}</div></div>',
+                    unsafe_allow_html=True)
+
 st.markdown('<br>', unsafe_allow_html=True)
-c1,c2 = st.columns([1.5,1], gap='large')
-with c1:
-    st.subheader('Stock coverage')
-    st.markdown('<p class="section-kicker">Current stock compared with required inventory</p>', unsafe_allow_html=True)
-    chart = plan.head(10)
-    fig = go.Figure()
-    fig.add_bar(name='Current stock', x=chart['ProductName'], y=chart['CurrentStock'], marker_color='#c7dedb')
-    fig.add_bar(name='Required inventory', x=chart['ProductName'], y=chart['RequiredInventory'], marker_color='#338f83')
-    fig.update_layout(barmode='group', height=300, margin=dict(l=0,r=0,t=15,b=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='white', font=dict(color='#74858d'), yaxis=dict(gridcolor='#edf2f1',title='Units'), xaxis=dict(title=None), legend=dict(orientation='h', y=1.15))
-    st.plotly_chart(fig, use_container_width=True, config=config)
-with c2:
-    st.subheader('Planning insights')
-    st.markdown('<p class="section-kicker">A little context for your next move</p>', unsafe_allow_html=True)
-    if investment > 0:
-        top = plan.loc[plan['Investment'].idxmax()]
-        st.markdown(f'<div class="insight"><b>✦ &nbsp;Largest allocation</b><br>{str(top["ProductName"]).replace("<", "&lt;").replace(">", "&gt;")} receives Rs. {top["Investment"]:,.0f} for {int(top["RecommendedPurchase"])} units, based on its shortage and price-weighted priority.</div>', unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Charts
+# ---------------------------------------------------------------------------
+left, right = st.columns([1.6, 1], gap='large')
+
+with left:
+    st.subheader('Where the money goes')
+    funded = plan[plan['Investment'] > 0].sort_values('Investment', ascending=True)
+    if funded.empty:
+        st.info('Nothing is affordable at this budget. Increase the budget or check the prices.')
     else:
-        st.info('No budget has been allocated. Check stock levels and budget.')
-    if has_history:
-        st.caption('Safety stock uses 1.28 × the standard deviation of the latest six monthly sales values. Forecasts are estimates, not guarantees.')
-    else:
-        st.caption('Safety stock is zero because no six-month history was provided. Forecasts are estimates, not guarantees.')
+        chart = funded.tail(12)
+        fig = px.bar(chart, x='Investment', y='ProductName', orientation='h',
+                     color='ExpectedProfit',
+                     color_continuous_scale=['#c94f4f', '#f0c419', '#2f9e79'],
+                     labels={'Investment': 'Investment (PKR)', 'ProductName': ''})
+        fig.update_layout(height=380, margin=dict(l=0, r=10, t=10, b=0),
+                          paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='white',
+                          coloraxis_colorbar=dict(title='Expected<br>profit (PKR)', thickness=12),
+                          xaxis=dict(gridcolor='#eef3f3'), yaxis=dict(gridcolor='rgba(0,0,0,0)'))
+        st.plotly_chart(fig, width="stretch",
+                        config={'displayModeBar': False})
+
+with right:
+    st.subheader('Demand vs stock on hand')
+    focus = plan.sort_values('ShortageUnits', ascending=False).head(10).iloc[::-1]
+    figure = go.Figure()
+    figure.add_bar(name='Current stock', y=focus['ProductName'], x=focus['CurrentStock'],
+                   orientation='h', marker_color='#cfe0e2')
+    figure.add_bar(name='Forecast + safety stock', y=focus['ProductName'],
+                   x=focus['RequiredInventory'], orientation='h', marker_color='#2f9e79')
+    figure.update_layout(barmode='group', height=380, margin=dict(l=0, r=10, t=10, b=0),
+                         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='white',
+                         legend=dict(orientation='h', y=1.12, x=0),
+                         xaxis=dict(title='Units', gridcolor='#eef3f3'),
+                         yaxis=dict(title=''))
+    st.plotly_chart(figure, width="stretch", config={'displayModeBar': False})
+
+# ---------------------------------------------------------------------------
+# The buying list
+# ---------------------------------------------------------------------------
+st.subheader('Buy this')
+buy = plan[plan['RecommendedPurchase'] > 0].copy()
+if buy.empty:
+    st.info('No purchases recommended at this budget.')
+else:
+    display = buy[['ProductName', 'Category', 'CurrentPrice', 'RetailPrice', 'CurrentStock',
+                   'RecommendedPurchase', 'Investment', 'ProfitPerUnit', 'ExpectedProfit']]
+    st.dataframe(
+        display.style.format({
+            'CurrentPrice': '{:,.0f}', 'RetailPrice': '{:,.0f}', 'Investment': '{:,.0f}',
+            'ProfitPerUnit': '{:,.0f}', 'ExpectedProfit': '{:,.0f}',
+        }).map(lambda v: 'color:#a5352f' if isinstance(v, (int, float)) and v < 0 else '',
+               subset=['ProfitPerUnit', 'ExpectedProfit']),
+        width="stretch", hide_index=True,
+        column_config={
+            'ProductName': 'Product', 'CurrentPrice': 'Buy price', 'RetailPrice': 'Sell price',
+            'CurrentStock': 'Stock', 'RecommendedPurchase': 'Buy units',
+            'Investment': 'Spend (PKR)', 'ProfitPerUnit': 'Profit/unit',
+            'ExpectedProfit': 'Expected profit',
+        })
+    st.caption('Buy price is what you pay per unit; expected profit is after marketplace '
+               'commission, shipping, ad spend and the expected return rate for that category.')
+
+    download = buy.to_csv(index=False).encode('utf-8')
+    st.download_button('↓ Export this buying list (CSV)', download,
+                       'shopmind_buying_list.csv', 'text/csv')
+
+# ---------------------------------------------------------------------------
+# Skipped items, with a reason
+# ---------------------------------------------------------------------------
+st.subheader('Not buying — and why')
+skipped = plan[plan['RecommendedPurchase'] == 0].copy()
+if skipped.empty:
+    st.caption('Every requested product is at least partly funded.')
+else:
+    def reason(row) -> str:
+        if row['ShortageUnits'] <= 0:
+            return 'Already enough stock'
+        if row['ProfitPerUnit'] < 0:
+            return 'Selling below cost after fees'
+        if row['CurrentPrice'] > summary['unallocated']:
+            return 'Budget ran out before this item'
+        return 'Budget ran out before this item'
+
+    skipped['Reason'] = skipped.apply(reason, axis=1)
+    shown = skipped[['ProductName', 'Category', 'CurrentPrice', 'CurrentStock', 'Reason']]
+    st.dataframe(shown, width="stretch", hide_index=True,
+                 column_config={'CurrentPrice': 'Buy price', 'CurrentStock': 'Stock'})
+
+# ---------------------------------------------------------------------------
+# Honest assumptions
+# ---------------------------------------------------------------------------
+with st.expander('How this plan was calculated (read this before acting on it)'):
+    rows = ''.join(f'<li>{line}</li>' for line in result.assumptions)
+    st.markdown(f'<div class="assume"><b>Model</b><br>'
+                f'The demand forecast comes from a two-stage model: a general market model, '
+                f'then a calibration to this seller. It predicts next month\'s units as a '
+                f'ratio to your trailing three-month average.<br><br>'
+                f'<b>Assumptions</b><ul>{rows}</ul>'
+                f'<b>Limitations</b><ul>'
+                f'<li>The demo history is synthetic and generated from published Pakistani price '
+                f'bands and return rates; see <code>data/demo/DATA_CARD.md</code>.</li>'
+                f'<li>Category economics are averages, not your own fee schedule.</li>'
+                f'<li>Forecast error is material (see the report). Treat this as decision support '
+                f'that ranks options, not as a precise prediction.</li>'
+                f'<li>Greedy allocation is not a globally optimal knapsack solution.</li>'
+                f'</ul></div>', unsafe_allow_html=True)
+
+st.markdown('<br>', unsafe_allow_html=True)
+st.caption('ShopMind AI · Sukkur IBA University ML semester project · '
+           'forecasts are estimates, not guarantees')

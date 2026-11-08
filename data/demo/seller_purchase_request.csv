@@ -1,0 +1,37 @@
+ProductID,ProductName,CurrentPrice,RetailPrice,CurrentStock,Category,UnitsWanted
+P028,Air Fryer - 5L,12500.58,21679.6,0,Home & Kitchen,5
+P003,Yoga Mat - 8mm,1695.46,2742.53,5,Sports & Fitness,20
+P042,Baby Fleece Blanket - Large,1026.51,2130.95,13,Baby & Kids,123
+P059,Sunblock SPF 50 - 75ml,767.17,1502.75,42,Beauty & Personal Care,107
+P019,Mini Bluetooth Speaker - 5W,2449.38,3444.63,4,Electronics,25
+P052,Skipping Rope - Basic,243.1,504.9,7,Sports & Fitness,35
+P054,Skipping Rope - Speed,526.05,940.95,24,Sports & Fitness,33
+P018,Kids Water Bottle - 800ml,813.7,1480.45,25,Baby & Kids,76
+P034,2-in-1 Juicer Blender - 2-in-1,6624.45,9914.52,62,Home & Kitchen,59
+P049,Electric Kettle - 1.5L,4232.81,7368.6,16,Home & Kitchen,28
+P032,3-Piece Chiffon Suit - Formal,5747.45,11904.34,14,Fashion,47
+P016,Kids Water Bottle - 400ml,478.31,829.95,8,Baby & Kids,114
+P022,Non-Stick Cookware Set - 7-Piece,3728.09,6673.23,11,Home & Kitchen,32
+P037,Dumbbell Set - 5kg,2483.03,4842.46,5,Sports & Fitness,11
+P021,Mini Bluetooth Speaker - Party,3670.5,4827.51,0,Electronics,20
+P014,Herbal Hair Oil - 200ml,340.78,786.6,84,Beauty & Personal Care,92
+P066,Herbal Face Wash - Combo,524.13,1127.07,1,Beauty & Personal Care,141
+P030,Air Fryer - Dual Basket,21550.4,35003.64,1,Home & Kitchen,5
+P033,3-Piece Chiffon Suit - Bridal,7630.59,14809.17,0,Fashion,56
+P011,TWS Wireless Earbuds - ENC,4154.23,5632.09,18,Electronics,29
+P046,Vitamin C Serum - 15ml,600.52,1397.09,133,Beauty & Personal Care,291
+P013,Herbal Hair Oil - 100ml,282.48,669.19,0,Beauty & Personal Care,455
+P023,Non-Stick Cookware Set - 12-Piece,4938.37,8781.75,0,Home & Kitchen,30
+P051,Electric Kettle - 2.0L,5739.04,10082.75,7,Home & Kitchen,14
+P038,Dumbbell Set - 10kg,3411.51,6081.76,11,Sports & Fitness,12
+P002,Yoga Mat - 6mm,1287.42,2203.2,3,Sports & Fitness,21
+P017,Kids Water Bottle - 600ml,632.89,1110.34,95,Baby & Kids,147
+P041,Baby Fleece Blanket - Medium,682.73,1469.23,90,Baby & Kids,105
+P050,Electric Kettle - 1.8L,4822.48,8478.93,1,Home & Kitchen,10
+P031,3-Piece Chiffon Suit - Semi-Formal,4744.99,8637.77,27,Fashion,82
+P063,Lawn Suit - Luxury,5042.42,8122.57,51,Fashion,229
+P056,Baby Diaper Pants (Pack) - Medium,1048.02,2052.44,14,Baby & Kids,79
+P036,2-in-1 Juicer Blender - 4-in-1,7541.84,14703.55,4,Home & Kitchen,11
+P053,Skipping Rope - Counter,342.48,654.08,0,Sports & Fitness,61
+P057,Baby Diaper Pants (Pack) - Large,1170.22,2310.4,16,Baby & Kids,48
+P010,TWS Wireless Earbuds - Standard,3743.75,4387.5,15,Electronics,25

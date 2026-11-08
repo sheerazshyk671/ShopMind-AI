@@ -1,0 +1,41 @@
+{
+  "seed": 42,
+  "split": {
+    "fit_end": "2026-02-01",
+    "validation": [
+      "2026-02-01",
+      "2026-06-01"
+    ],
+    "test_start": "2026-06-01"
+  },
+  "rows": {
+    "feature_ready": 1188,
+    "fit": 660,
+    "validation": 264,
+    "test": 264
+  },
+  "features_used": 15,
+  "best_model": "Random Forest",
+  "best_model_test_mae": 14.9314,
+  "best_baseline_test_mae": 15.5265,
+  "improvement_vs_baseline_pct": 3.83,
+  "model_beats_baseline": true,
+  "best_model_rupee_wape": 28.97,
+  "best_baseline_rupee_wape": 31.47,
+  "stage2_chosen_on_validation": "Stage 2: per-category offset (partial pooling)",
+  "stage2_method": "category_offset",
+  "stage2_offset": 1.0139,
+  "stage2_category_offsets": {
+    "__pooled__": 1.0139,
+    "Baby & Kids": 1.0258,
+    "Beauty & Personal Care": 1.0111,
+    "Electronics": 0.9148,
+    "Fashion": 1.0403,
+    "Home & Kitchen": 1.0024,
+    "Sports & Fitness": 1.0073
+  },
+  "tuned": true,
+  "stage2_helped_on_test": false,
+  "shipped_model": "base_model.pkl (stage 1)",
+  "shipping_reason": "Stage-2 calibration was selected on validation and measured on test; it is saved as seller_model.pkl and offered in the app, but the default is the simpler stage-1 model because the fine-tune did not improve test accuracy."
+}

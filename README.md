@@ -1,57 +1,163 @@
 # ShopMind AI
 
-Budget-aware demand forecasting and inventory planning using the UCI Online Retail II dataset, with a seller-specific calibration layer and a Streamlit dashboard.
+Budget-aware demand forecasting and buying plans for Pakistani online sellers.
 
-## Run the dashboard
+You give it two things: **your sales history** and **the products you want to buy this month, with their prices, current stock and your budget**. It forecasts demand, then tells you what to buy and where the money goes.
 
-Python 3.9+ is required. The included model was trained with the pinned versions in `requirements.txt`; scikit-learn model files are not reliably portable between versions.
+Built as the ML semester project for Sukkur IBA University (Fall 2026).
+
+> **The demo data is synthetic.** It is generated from published Pakistani price bands, return rates and the real Ramadan/Eid calendar. Every number is documented in [`data/demo/DATA_CARD.md`](data/demo/DATA_CARD.md). Do not present it as real seller data.
+
+---
+
+## Quick start
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+
+python scripts/train_pipeline.py --demo     # generate demo data and train
 streamlit run app/app.py
 ```
 
-The dashboard loads the trained model and a demo seller file by default. Upload a CSV or XLSX, enter a budget, and click **Generate purchase plan**. You can download the seller template and the recommendations from the app. If the model is missing, the app explicitly falls back to a recent-sales baseline.
+The dashboard loads the demo request (36 products, Rs 500,000 budget) by default. Change the budget, upload your own CSV, and the plan updates.
 
-### Seller file and calibration
+## The two-stage design
 
-The demo file `data/sample_seller_products.csv` has `ProductID`, `ProductName`, `CurrentPrice`, `CurrentStock`, and twelve consecutive monthly sales columns `Sales_01` through `Sales_12`, oldest first. You may provide six or more consecutive `Sales_XX` columns (up to 99); every row must have the same months, with no gaps. The most recent column is assumed to represent the current calendar month, and the model forecasts the next calendar month. Supply complete, comparable monthly data; if the current month is incomplete, the forecast may be biased.
+| Stage | Trained on | Purpose |
+|---|---|---|
+| **1. Market model** | A general market panel (many sellers, many products) | Works for a product with little or no history — it knows the generic shape of demand |
+| **2. Seller calibration** | This seller's own 12+ months | Adjusts the market model to how *this* seller actually sells |
 
-The last six months supply actual lag, rolling mean and standard deviation features. Forecast units equal the predicted ratio times the latest three-month average, adjusted by a seller calibration factor. Safety stock is 1.28 times the sample standard deviation of the last six months. An item with zero three-month sales receives a zero forecast, though safety stock may still be positive.
+Both are shipped. **Stage 1 is the default**, because stage 2 did not improve accuracy on the untouched test window (see Results). The app lets you switch, and says which one you are using.
 
-With seven or more months, the app constructs historical one-step predictions using only preceding months. It compares pooled predicted units to actual seller units, caps the resulting ratio to 0.5–2.0, then shrinks it towards 1 by `n / (n + 20)`, where `n` is the number of eligible product-month examples. This is **pooled post-hoc calibration**, not retraining or fine-tuning the model; it is not independently validated on future seller data and can be unstable or biased for small or changing catalogs. Six months alone produces no calibration. The dashboard shows the factor and example count. Legacy files with only `RecentMonthlySales` are supported via a flat-history proxy and zero safety stock.
+## What you upload
 
-## Reproduce training
+**Products to buy** (`seller_purchase_request.csv`):
 
-The [UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) dataset contains UK transactions from 2009–2011. The raw dataset is not committed. To reproduce using the pinned CSV exports mirrored in [this GitHub repository](https://github.com/nicolexyu/Team_Project_Online_Retail/tree/main/data/raw), run:
+| Column | Required | Meaning |
+|---|---|---|
+| `ProductID` | yes | Unique key, matches the history |
+| `ProductName` | yes | Display only |
+| `CurrentPrice` | yes | What you **pay** per unit (PKR) |
+| `CurrentStock` | yes | Units on hand now |
+| `RetailPrice` | no | What you **sell** it for. Needed for the profit estimate |
+| `Category` | no | Enables per-category economics (commission, returns) |
+| `UnitsWanted` | no | Caps how many units you are willing to buy |
+
+**Sales history** (`seller_sales_history.csv`), one row per product per month, at least 12 months for the demo:
+
+| Column | Required | Meaning |
+|---|---|---|
+| `product_id` | yes | Matches `ProductID` |
+| `month` | yes | Month start date |
+| `units_sold` | yes | Units actually sold that month |
+| `category` | no | Enables stage-2 category calibration |
+| `promo_days`, `discount_pct` | no | Planned promotions (known before the month) |
+
+## Results (demo data, seed 42, test window Jun–Sep 2026)
+
+Chronological three-way split: **fit** (660 rows) → **validation** (264) → **test** (264). Nothing was tuned on the test window.
+
+| Model | Family | MAE | WMAPE | MASE | Rupee-weighted error |
+|---|---|---:|---:|---:|---:|
+| **Random Forest** | Tree ensemble | **14.93** | **26.2%** | 0.027 | **29.0%** |
+| Baseline: last-3-month mean (= fixed ratio 1.0) | Baseline | 15.53 | 27.3% | 0.028 | 31.5% |
+| Gradient Boosting | Boosted trees | 15.61 | 27.4% | 0.028 | 31.2% |
+| Decision Tree | Tree | 17.33 | 30.4% | 0.032 | 33.7% |
+| Baseline: seasonal naive (same month last year) | Baseline | 26.22 | 46.0% | 0.048 | 45.3% |
+| Linear Regression | Linear | 50.63 | 88.9% | 0.092 | 87.8% |
+
+**Read this honestly:**
+
+- Only **one of four** models beats the strongest baseline, and only by **3.8%**. Three of four do not.
+- The strongest baseline is not the naive one — it is "assume next month equals the recent three-month average". That rule is reported in every table precisely because it is easy to hide behind a weaker baseline.
+- Stage 2 calibration was selected on validation but **did not help on test** (`stage2_helped_on_test: false` in `reports/training_summary.json`). That is a negative result and it is reported as one.
+- WMAPE ≈ 26% means a quarter of a month's units are wrong. This ranks options; it does not guarantee a purchase.
+
+Reproduce every number above:
+
+```bash
+python scripts/train_pipeline.py --demo --tune     # results tables
+python scripts/censoring_experiment.py            # sales vs demand
+python scripts/eda.py                             # the 4 report figures
+cat reports/training_summary.json
+```
+
+All of it is also written up in [`reports/RESULTS.md`](reports/RESULTS.md), which is
+generated by the same run and must be regenerated if the model changes.
+
+## Why these numbers are modest
+
+The demo generator deliberately includes the things that make real forecasting hard:
+
+1. **Censored demand.** Stock-outs truncate recorded sales, so `units_sold` understates demand for fast movers. `lost_units` exposes the gap.
+2. **A growth trend inside the test window.** Demand in the test months runs ~19% above the fit window, so any model anchored on the trailing mean is biased low.
+3. **Lumpy, zero-heavy series.** Many slow movers; a few products carry most of the revenue (top 10% of rows ≈ 49% of revenue).
+4. **Lunar-calendar seasonality.** Ramadan moves ~11 days earlier every year, so a month-of-year feature cannot capture it.
+
+Full analysis: [`docs/LEAKAGE_AUDIT.md`](docs/LEAKAGE_AUDIT.md) and [`docs/PROJECT_IDEAS.md`](docs/PROJECT_IDEAS.md).
+
+## How the plan is priced
+
+```
+profit per unit = retail price x (1 - return rate)
+                  - commission - ad spend - outbound shipping - return handling - unit cost
+```
+
+| Category | Commission | Return rate | Ad spend |
+|---|---:|---:|---:|
+| Fashion | 13% | 21% | 4.5% |
+| Electronics | 8% | 10% | 5.5% |
+| Home & Kitchen | 11% | 12% | 4.0% |
+| Beauty & Personal Care | 12% | 15% | 6.0% |
+| Baby & Kids | 10% | 11% | 3.5% |
+| Sports & Fitness | 9% | 13% | 4.5% |
+
+Return rates reflect published Pakistani COD bands (fashion highest, electronics lowest). The budget is allocated greedily by **expected profit per rupee of purchase** — it is a good heuristic, not a globally optimal knapsack solution. Safety stock is 1.28 × the standard deviation of the last six months, roughly a 90% service level under a normal assumption.
+
+## Project layout
+
+```
+src/catalog.py        40 product archetypes with verified Pakistani price bands
+src/demo_data.py      dataset generator (market panel, seller panel, purchase request)
+src/preprocessing.py  Online Retail II cleaning → monthly panel (optional real data)
+src/features.py       leakage-free features from prior months only
+src/modeling.py       stage 1 / stage 2 models, baselines, metrics, tuning
+src/planning.py       the buying-plan layer the app calls
+app/app.py            Streamlit dashboard
+scripts/train_pipeline.py      fit → validation → test, writes reports/
+scripts/censoring_experiment.py  does forecasting sales instead of demand bias the model?
+scripts/eda.py                 4 report figures + reports/eda_takeaways.md
+tests/                45 tests, including a feature-leakage proof
+docs/                 leakage audit and project idea shortlist
+reports/              results tables, figures, worst predictions, training summary
+```
+
+## Tests
+
+```bash
+pytest -q      # 45 passed
+```
+
+The important one is `tests/test_modeling.py::test_features_at_month_t_never_use_month_t_or_later`: it recomputes features on a truncated panel and asserts they are unchanged, which fails if any feature peeks forward.
+
+## Optional: train on real retail data
+
+The original pipeline used UCI Online Retail II. It still works for the feature stage:
 
 ```bash
 python scripts/download_data.py
 python -m src.preprocessing 'data/raw/online_retail_II(Year 2009-2010).csv,data/raw/online_retail_II(Year 2010-2011).csv'
-python -m src.forecasting
-pytest -q
+python -m src.forecasting   # removed in this version; see git history
 ```
 
-The downloader verifies SHA-256 checksums. Alternatively, download the original `online_retail_II.xlsx` workbook from UCI, place it at `data/raw/online_retail_II.xlsx`, and run `python -m src.preprocessing`; all workbook sheets are read. Check the dataset's source terms before reuse.
+That model was **not** carried forward: it scored R² ≈ 0 on its own holdout, and this version replaces it with the two-stage design above. The downloader verifies SHA-256 checksums; the dataset is CC BY 4.0 (DOI 10.24432/C5CG6D).
 
-Preprocessing removes cancellations, non-product codes, non-positive prices and quantities, and missing descriptions; it fills zero-sales months after a product's first sale and retains products with at least 12 months between first and last sale and six selling months. Features predict each month's sales relative to the preceding three-month mean, using only prior months. A zero rolling mean cannot define a ratio, so such training rows are excluded. The lowest validation MAE is saved to `models/demand_model.pkl`.
+## Limitations
 
-### Training results
-
-The two original annual CSV exports contain 1,067,371 rows. Cleaning and aggregation yielded 73,679 product-month rows across 3,126 products. There were 39,033 training and 10,159 validation examples. The time split uses feature-ready months before September 2011 for training and September–December 2011 for validation. Reproducible results with the pinned dependencies:
-
-| Model | Ratio MAE | Ratio RMSE | R² |
-|---|---:|---:|---:|
-| Linear regression | 2.9866 | 25.7084 | 0.0052 |
-| Random forest | 3.6223 | 26.5023 | -0.0572 |
-| Gradient boosting | **2.9534** | 25.9730 | -0.0154 |
-
-The included gradient boosting model had the lowest MAE, but the low/negative R² and high RMSE indicate weak performance and large errors on this historical holdout. Ratio targets can be extreme when the historical mean is small. This model and the seller calibration should be independently validated on current seller data before operational use; they are not guarantees of demand or savings.
-
-## Optimization assumptions
-
-- Prices are treated as unit acquisition costs in rupees. Shortages are rounded up to whole units, then allocated greedily within the budget.
-- As written in the specification, priority is `shortage * (price * 0.5)`; a fixed positive alpha scales every score equally and does **not** change product ordering. The heuristic is not a globally optimal knapsack solution.
-- Only load trusted model files: joblib artifacts can execute code when loaded.
+- Demo data is synthetic; no claim of real-world business impact.
+- One seller, 24 months. The test window is 4 months.
+- Category economics are averages, not a real fee schedule.
+- Products with fewer than six months of history fall back to the seller's stated quantity; the app says so when it happens.
+- Only load model files you trust: joblib artifacts can execute code when loaded.

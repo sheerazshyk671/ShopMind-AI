@@ -4,3 +4,8 @@ __pycache__/
 *.pyc
 data/raw/*
 data/processed/*
+
+# Generated demo artefacts are reproducible from src/demo_data.py, but the
+# dataset is small enough to commit so the app runs without a training step.
+# Large regenerated exports stay out.
+data/demo/*.zip
