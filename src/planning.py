@@ -57,24 +57,34 @@ def _economics(category: str) -> dict:
     return CATEGORY_ECONOMICS.get(str(category), DEFAULT_ECONOMICS)
 
 
-def expected_profit_per_unit(price: float, cost: float, category: str) -> float:
+def expected_profit_per_unit(price: float, cost: float, category: str,
+                             return_rate: float | None = None) -> float:
     """Expected contribution of selling one additional unit, net of marketplace costs.
 
     Only units that are actually *delivered and kept* earn revenue, so the return
     rate is applied first; the return leg costs money on the units that came back.
+
+    ``return_rate`` overrides the category default. This exists because the measured
+    return rate on the real Pakistani dataset (48%) is far above the published bands
+    used as defaults, so a seller must be able to ask "what if my returns are worse?"
+    without editing the source. It is clamped to [0, 0.95]: a 100% return rate would
+    mean no sale at all.
     """
     econ = _economics(category)
-    keep = 1 - econ['return_rate']
+    rate = econ['return_rate'] if return_rate is None else float(return_rate)
+    rate = min(max(rate, 0.0), 0.95)
+    keep = 1 - rate
     revenue = price * keep
     fees = revenue * (econ['commission'] + econ['ad_rate'])
     shipping = econ['shipping'] / max(econ['items_per_order'], 0.1)
-    returns = econ['return_cost'] * econ['return_rate'] / max(econ['items_per_order'], 0.1)
+    returns = econ['return_cost'] * rate / max(econ['items_per_order'], 0.1)
     return float(revenue - fees - shipping - returns - cost * keep)
 
 
 def forecast_request(request: pd.DataFrame, model, budget: float,
                      history: pd.DataFrame | None = None,
-                     forecast_month: str | None = None) -> PlanResult:
+                     forecast_month: str | None = None,
+                     return_rate: float | None = None) -> PlanResult:
     """Forecast demand for each requested product and allocate the budget.
 
     ``history`` is a long panel with ``StockCode``, ``month``, ``monthly_units_sold``
@@ -176,13 +186,18 @@ def forecast_request(request: pd.DataFrame, model, budget: float,
     request['RecommendedPurchase'] = 0
     request['Investment'] = 0.0
 
-    plan = allocate_budget(request, budget)
+    plan = allocate_budget(request, budget, return_rate=return_rate)
     summary = summarise(plan, budget)
     assumptions = _assumptions(model)
+    if return_rate is not None:
+        assumptions = assumptions + [
+            f'Return rate overridden to {100 * float(return_rate):.1f}% for every category '
+            '(defaults are the per-category planning assumptions).']
     return PlanResult(plan=plan, summary=summary, assumptions=assumptions + notes)
 
 
-def allocate_budget(plan: pd.DataFrame, budget: float) -> pd.DataFrame:
+def allocate_budget(plan: pd.DataFrame, budget: float,
+                    return_rate: float | None = None) -> pd.DataFrame:
     """Greedy, profit-per-rupee ranked allocation.
 
     Products are ranked by expected *profit contribution per rupee of purchase*, which
@@ -225,7 +240,7 @@ def allocate_budget(plan: pd.DataFrame, budget: float) -> pd.DataFrame:
               if 'RetailPrice' in plan.columns else price)
     plan['UnitCost'] = cost
     plan['RetailPrice'] = retail
-    plan['ProfitPerUnit'] = [expected_profit_per_unit(r, c, cat)
+    plan['ProfitPerUnit'] = [expected_profit_per_unit(r, c, cat, return_rate)
                              for r, c, cat in zip(retail, cost, category)]
     plan['ProfitPerRupee'] = plan['ProfitPerUnit'] / cost
 
@@ -247,8 +262,9 @@ def allocate_budget(plan: pd.DataFrame, budget: float) -> pd.DataFrame:
             plan.loc[idx, 'Investment'] = round(units * unit_cost, 2)
             remaining = round(remaining - units * unit_cost, 2)
     plan['ExpectedProfit'] = (plan['RecommendedPurchase'] * plan['ProfitPerUnit']).round(2)
-    plan['ExpectedRevenue'] = (plan['RecommendedPurchase'] * retail
-                               * (1 - category.map(lambda c: _economics(c)['return_rate']))).round(2)
+    keep_rate = (1 - float(return_rate)) if return_rate is not None else \
+        (1 - category.map(lambda c: _economics(c)['return_rate']))
+    plan['ExpectedRevenue'] = (plan['RecommendedPurchase'] * retail * keep_rate).round(2)
     plan['RecommendedPurchase'] = plan['RecommendedPurchase'].astype(int)
     plan['IsUnprofitable'] = plan['ProfitPerUnit'] < 0
     return plan.sort_values(['Investment', 'ShortageUnits'], ascending=False).reset_index(drop=True)

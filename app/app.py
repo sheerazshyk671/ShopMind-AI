@@ -134,6 +134,18 @@ with st.sidebar:
                              format='%.0f', label_visibility='collapsed')
 
     st.markdown('<div style="font-size:.68rem;letter-spacing:.14em;font-weight:700;'
+                'color:#7fa3a6;margin-top:1.2rem">RETURN RATE</div>', unsafe_allow_html=True)
+    use_real_returns = st.toggle(
+        'Use the measured Pakistani return rate (48%)', value=False,
+        help='Pakistan\'s Largest E-Commerce Dataset shows a 48% realised return rate '
+             '(Entertainment 65%, Mobiles 60%, Books 28%). The per-category planning '
+             'defaults are 10-21%, i.e. a better-than-real marketplace. Turning this on '
+             're-plans the same budget under the harsher, measured assumption.')
+    custom_return = st.slider('Or set it manually (%)', min_value=0, max_value=80, value=21, step=1,
+                              help='Overrides every category. Ignored when the toggle above is on.')
+    return_rate = 0.48 if use_real_returns else custom_return / 100.0
+
+    st.markdown('<div style="font-size:.68rem;letter-spacing:.14em;font-weight:700;'
                 'color:#7fa3a6;margin-top:1.2rem">PRODUCTS TO BUY</div>', unsafe_allow_html=True)
     upload = st.file_uploader('Purchase request CSV', type=['csv', 'xlsx'],
                               label_visibility='collapsed',
@@ -204,7 +216,8 @@ if model is None:
 # ---------------------------------------------------------------------------
 try:
     request = validate_request(request)
-    result = forecast_request(request, model, budget=budget, history=history)
+    result = forecast_request(request, model, budget=budget, history=history,
+                              return_rate=return_rate)
 except Exception as exc:  # noqa: BLE001 - surface the reason to the user
     st.error(f'Could not build a plan: {exc}')
     st.stop()

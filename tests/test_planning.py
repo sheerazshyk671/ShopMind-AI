@@ -175,3 +175,64 @@ def test_current_price_zero_is_rejected_through_the_planner():
     with pytest.raises(ValueError):
         forecast_request(request_frame(CurrentPrice=[1200.0, 0.0, 14000.0]), model,
                          budget=100_000, history=history_frame())
+
+
+# ---------------------------------------------------------------------------
+# Return-rate override
+#
+# The real Pakistani dataset measures a 48% return rate, far above the published
+# 10-21% planning defaults. A seller must be able to ask "what if my returns are worse?"
+# without editing source. These tests pin that behaviour down.
+# ---------------------------------------------------------------------------
+def test_return_rate_override_reduces_profit_per_unit():
+    default = expected_profit_per_unit(5000, 2000, 'Fashion')
+    worse = expected_profit_per_unit(5000, 2000, 'Fashion', return_rate=0.48)
+    better = expected_profit_per_unit(5000, 2000, 'Fashion', return_rate=0.02)
+
+    assert worse < default < better
+
+
+def test_return_rate_override_matches_the_category_default_when_omitted():
+    """Passing the category's own rate explicitly must be identical to not passing it."""
+    from src.planning import CATEGORY_ECONOMICS
+
+    for category, econ in CATEGORY_ECONOMICS.items():
+        assert expected_profit_per_unit(5000, 2000, category) == pytest.approx(
+            expected_profit_per_unit(5000, 2000, category, return_rate=econ['return_rate']))
+
+
+def test_extreme_return_rate_is_clamped_not_exploded():
+    """A 100% return rate would mean nothing is ever kept; it must not crash or go NaN."""
+    value = expected_profit_per_unit(5000, 2000, 'Fashion', return_rate=1.5)
+    assert np.isfinite(value)
+    assert value < 0  # nothing is sold, so every unit is a loss
+
+    negative = expected_profit_per_unit(5000, 2000, 'Fashion', return_rate=-0.5)
+    assert np.isfinite(negative)
+
+
+def test_overridden_return_rate_flows_into_the_plan_and_the_summary():
+    """The override must reach ProfitPerUnit *and* ExpectedRevenue, not just one of them."""
+    frame = request_frame()
+    cheap = forecast_request(frame, ConstantRatio(1.0), 500_000,
+                             history=None, return_rate=0.05)
+    costly = forecast_request(frame, ConstantRatio(1.0), 500_000,
+                              history=None, return_rate=0.60)
+
+    assert costly.plan['ProfitPerUnit'].sum() < cheap.plan['ProfitPerUnit'].sum()
+    assert costly.plan['ExpectedRevenue'].sum() < cheap.plan['ExpectedRevenue'].sum()
+    assert any('Return rate overridden' in a for a in costly.assumptions)
+
+
+def test_no_override_leaves_no_override_note():
+    result = forecast_request(request_frame(), ConstantRatio(1.0), 500_000, history=None)
+    assert not any('Return rate overridden' in a for a in result.assumptions)
+
+
+def test_override_does_not_mutate_the_category_profile():
+    """The override must be a parameter, not a global edit — a later call must be unaffected."""
+    from src.planning import CATEGORY_ECONOMICS
+
+    before = dict(CATEGORY_ECONOMICS['Fashion'])
+    expected_profit_per_unit(5000, 2000, 'Fashion', return_rate=0.90)
+    assert CATEGORY_ECONOMICS['Fashion'] == before

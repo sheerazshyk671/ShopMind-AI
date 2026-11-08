@@ -17,3 +17,6 @@ data/demo/*.zip
 # The real dataset export is 106 MB and licensed to its original author.
 # It is not committed; see docs/PAKISTAN_DATASET.md for provenance and the SHA-256.
 data/raw/pakistan_ecommerce_raw.csv
+
+# Jupyter checkpoints
+.ipynb_checkpoints/

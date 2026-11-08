@@ -301,8 +301,23 @@ def main() -> None:
     base_model.save(models_dir / 'base_model.pkl')
     seller_model.save(models_dir / 'seller_model.pkl')
 
-    best_model_mae = float(stage1.loc[stage1['family'] != 'Baseline', 'MAE'].min())
+    # --- which model do we actually claim? -------------------------------
+    # The pre-registered protocol selects on VALIDATION and scores on TEST exactly once.
+    # So the model we are allowed to report as "ours" is the one that won validation,
+    # i.e. ``base_name`` (the model that was saved). Reading the best test row and
+    # calling it ours would be selecting on the test window, which is the leakage the
+    # course rubric explicitly penalises. Both numbers are reported so the gap is
+    # visible rather than hidden.
+    shipped_row = stage1.loc[stage1['model'] == base_name].iloc[0]
+    best_model_mae = float(shipped_row['MAE'])
     best_baseline_mae = float(stage1.loc[stage1['family'] == 'Baseline', 'MAE'].min())
+
+    # Post-hoc: which model would have looked best on test? Reported only as a
+    # selection-variance diagnostic, never as a result.
+    test_best_row = stage1.loc[stage1['family'] != 'Baseline'].iloc[0]
+    best_model_rupee_wape = float(shipped_row['rupee_WAPE'])
+    best_baseline_row = stage1.loc[stage1['family'] == 'Baseline'].iloc[0]
+
     summary = {
         'seed': SEED,
         'split': {k: (v if not isinstance(v, list) else [str(x) for x in v])
@@ -310,13 +325,20 @@ def main() -> None:
         'rows': {'feature_ready': int(len(data)), 'fit': int(len(fit)),
                  'validation': int(len(val)), 'test': int(len(test))},
         'features_used': int(len([c for c in data.columns if c in FIT_COLUMNS])),
-        'best_model': str(stage1.loc[stage1['family'] != 'Baseline'].iloc[0]['model']),
-        'best_model_test_mae': round(best_model_mae, 4),
+        'model_selection': 'validation window, then scored once on test',
+        'reported_model': base_name,
+        'reported_model_test_mae': round(best_model_mae, 4),
+        'reported_model_test_rupee_wape': round(best_model_rupee_wape, 2),
         'best_baseline_test_mae': round(best_baseline_mae, 4),
         'improvement_vs_baseline_pct': round(100 * (best_baseline_mae - best_model_mae) / best_baseline_mae, 2),
         'model_beats_baseline': bool(best_model_mae < best_baseline_mae),
-        'best_model_rupee_wape': round(float(stage1.loc[stage1['family'] != 'Baseline'].iloc[0]['rupee_WAPE']), 2),
-        'best_baseline_rupee_wape': round(float(stage1.loc[stage1['family'] == 'Baseline'].iloc[0]['rupee_WAPE']), 2),
+        'best_baseline_rupee_wape': round(float(best_baseline_row['rupee_WAPE']), 2),
+        # Selection variance: the test-optimal model is NOT the one we ship. Recorded so
+        # the report can say how much the choice of selection window moved the answer.
+        'test_optimal_model_if_we_had_peeked': str(test_best_row['model']),
+        'test_optimal_model_mae': round(float(test_best_row['MAE']), 4),
+        'selection_variance_pct': round(
+            100 * (best_model_mae - float(test_best_row['MAE'])) / best_model_mae, 2),
         'stage2_chosen_on_validation': chosen_variant,
         'stage2_method': seller_model.method,
         'stage2_offset': round(float(seller_model.offset), 4),
