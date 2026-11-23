@@ -1,0 +1,18 @@
+product_id,product_name,category,wholesale_cost_pkr,selling_price_pkr,current_stock_in_hand
+SKU-SHT-01,Cotton Oxford Casual Button-Down Shirt,Fashion,1200,2100,12
+SKU-JNS-01,Levi's Slim Fit Stretch Denim Jeans,Fashion,2200,3600,8
+SKU-SUT-01,Luxury Embroidered 3-Piece Stitched Suit,Fashion,5500,9500,4
+SKU-WAT-01,Fossil Chronograph Leather Men's Watch,Fashion,4500,7800,5
+SKU-TEE-01,Crew-Neck Summer Graphic T-Shirt,Fashion,850,1500,15
+SKU-SHO-01,Breathable Mesh Lightweight Running Shoes,Fashion,2800,4600,10
+SKU-SNE-01,Low-Top Canvas Casual Sneakers,Fashion,2400,3900,10
+SKU-CRO-01,24-Piece Ceramic Dinner Crockery Set,Home & Furniture,3200,5200,6
+SKU-BED-01,King Size Luxury Printed Cotton Bed Sheet,Home & Furniture,1400,2400,8
+SKU-CUR-01,Thermal Blackout Window Curtains (Pair),Home & Furniture,1800,3100,6
+SKU-RCK-01,4-Tier Wooden Organizer Shoe Rack,Home & Furniture,2600,4300,5
+SKU-SOF-01,3-Seater Velvet Fabric Living Room Sofa,Home & Furniture,28000,45000,2
+SKU-SPK-01,Audionic Bluetooth Portable Party Speaker,Electronic,3500,5800,5
+SKU-JCR-01,Anex 3-in-1 Blender Mixer & Juicer,Electronic,4800,7600,4
+SKU-FAN-01,Pak Fan Deluxe Pedestal Standing Fan,Electronic,5500,8500,3
+SKU-IRN-01,Philips Heavyweight Dry Iron (1000W),Electronic,2800,4400,5
+SKU-LED-01,32-Inch Frameless HD Smart Android LED TV,Electronic,18000,27000,2

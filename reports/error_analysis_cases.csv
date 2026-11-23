@@ -1,0 +1,9 @@
+Order_Date,Product_Category,Product,Quantity,Predicted_Quantity,Absolute_Residual,Discount
+2018-12-05,Fashion,Shirts,5.0,2.08,2.92,0.4
+2018-12-06,Fashion,Fossil Watch,5.0,2.15,2.85,0.5
+2018-11-13,Fashion,Running Shoes,5.0,2.18,2.82,0.2
+2018-11-10,Fashion,Fossil Watch,5.0,2.19,2.81,0.2
+2018-11-18,Fashion,Sports Wear,5.0,2.21,2.79,0.3
+2018-12-10,Fashion,Fossil Watch,5.0,2.22,2.78,0.4
+2018-12-30,Home & Furniture,Sofa Covers,5.0,2.26,2.74,0.3
+2018-12-21,Fashion,T - Shirts,5.0,2.28,2.72,0.2
