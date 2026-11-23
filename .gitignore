@@ -35,6 +35,13 @@ MASTER_PROJECT_PROMPT*
 RESUME_INSTRUCTIONS.md
 pdf2.pdf
 
+# Academic university submission files (keep local, omit from public GitHub)
+ShopMind_AI_Final_Project_Report.pdf
+ShopMind_AI_Project_Proposal.pdf
+Fall 2026-Machine Learning Outline - Theory (1).docx
+ML_Semester_Project_Guidelines_Fall2026.pdf
+generate_final_report.py
+
 # Raw uncompressed external master dataset (keep subset only)
 ecommerce_dataset.csv
 
